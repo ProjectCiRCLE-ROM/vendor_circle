@@ -90,6 +90,10 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     android.software.credentials.prebuilt.xml
 
+# Unlimited google photos backup
+PRODUCT_COPY_FILES += \
+    vendor/circle/prebuilt/google/etc/sysconfig/pixel_2016_exclusive.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/sysconfig/pixel_2016_exclusive.xml
+
 # Enable wireless Xbox 360 controller support
 PRODUCT_COPY_FILES += \
     frameworks/base/data/keyboards/Vendor_045e_Product_028e.kl:$(TARGET_COPY_OUT_PRODUCT)/usr/keylayout/Vendor_045e_Product_0719.kl
