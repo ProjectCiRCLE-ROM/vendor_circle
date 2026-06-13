@@ -13,7 +13,7 @@ function check_product()
         return
     fi
     if (echo -n $1 | grep -q -e "^circle_") ; then
-        CIRCLE_BUILD=$(echo -n $1 | sed -e 's/^circ;e_//g')
+        CIRCLE_BUILD=$(echo -n $1 | sed -e 's/^circle_//g')
     else
         CIRCLE_BUILD=
     fi
