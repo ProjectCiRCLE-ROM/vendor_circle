@@ -31,4 +31,4 @@ $(CIRCLE_TARGET_PACKAGE): $(INTERNAL_OTA_PACKAGE_TARGET)
 	@echo "If there are any problems, don't hesitate to reach out! Enjoy!" >&2
 
 .PHONY: live
-bacon: $(CIRCLE_TARGET_PACKAGE) $(DEFAULT_GOAL)
+live: $(CIRCLE_TARGET_PACKAGE) $(DEFAULT_GOAL)
