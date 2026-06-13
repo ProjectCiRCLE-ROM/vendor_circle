@@ -16,14 +16,19 @@
 # -----------------------------------------------------------------
 # Lineage OTA update package
 
-LINEAGE_TARGET_PACKAGE := $(PRODUCT_OUT)/lineage-$(LINEAGE_VERSION).zip
+CIRCLE_TARGET_PACKAGE := $(PRODUCT_OUT)/ProjectCiRCLE-$(CIRCLE_VERSION).zip
 
 SHA256 := prebuilts/build-tools/path/$(HOST_PREBUILT_TAG)/sha256sum
 
-$(LINEAGE_TARGET_PACKAGE): $(INTERNAL_OTA_PACKAGE_TARGET)
-	$(hide) ln -f $(INTERNAL_OTA_PACKAGE_TARGET) $(LINEAGE_TARGET_PACKAGE)
-	$(hide) $(SHA256) $(LINEAGE_TARGET_PACKAGE) | sed "s|$(PRODUCT_OUT)/||" > $(LINEAGE_TARGET_PACKAGE).sha256sum
-	@echo "Package Complete: $(LINEAGE_TARGET_PACKAGE)" >&2
+$(CIRCLE_TARGET_PACKAGE): $(INTERNAL_OTA_PACKAGE_TARGET)
+	@echo "Thanks for tuning in!" >&2
+	@echo "" >&2
+	$(hide) ln -f $(INTERNAL_OTA_PACKAGE_TARGET) $(CIRCLE_TARGET_PACKAGE)
+	$(hide) $(SHA256) $(CIRCLE_TARGET_PACKAGE) | sed "s|$(PRODUCT_OUT)/||" > $(CIRCLE_TARGET_PACKAGE).sha256sum
+	@echo "Good work! You can find your recording here:" >&2
+	@echo "$(CIRCLE_TARGET_PACKAGE)" >&2
+	@echo "" >&2
+	@echo "If there are any problems, don't hesitate to reach out! Enjoy!" >&2
 
-.PHONY: bacon
-bacon: $(LINEAGE_TARGET_PACKAGE) $(DEFAULT_GOAL)
+.PHONY: live
+bacon: $(CIRCLE_TARGET_PACKAGE) $(DEFAULT_GOAL)

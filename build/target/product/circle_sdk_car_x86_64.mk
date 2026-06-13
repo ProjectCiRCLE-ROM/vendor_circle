@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-$(call inherit-product, device/generic/common/gsi_x86_64.mk)
+$(call inherit-product, device/generic/car/sdk_car_x86_64.mk)
 
-include vendor/lineage/build/target/product/lineage_generic_target.mk
+include device/generic/goldfish/board/kernel/x86_64.mk
 
-PRODUCT_USE_DYNAMIC_PARTITION_SIZE := true
+include vendor/circle/build/target/product/lineage_generic_car_target.mk
 
-TARGET_NO_KERNEL_OVERRIDE := true
+PRODUCT_NAME := circle_sdk_car_x86_64
 
-PRODUCT_NAME := lineage_gsi_x86_64
+PRODUCT_SDK_ADDON_NAME := lineage
+PRODUCT_SDK_ADDON_SYS_IMG_SOURCE_PROP := $(LOCAL_PATH)/source.properties
