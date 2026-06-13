@@ -27,7 +27,7 @@ import (
 )
 
 func init() {
-	android.RegisterModuleType("soong_generator", GeneratorFactory)
+	android.RegisterModuleType("circle_generator", GeneratorFactory)
 }
 
 var String = proptools.String
