@@ -145,9 +145,11 @@ PRODUCT_PACKAGES += \
 
 # Lineage packages
 ifeq ($(PRODUCT_IS_ATV),)
+ifneq ($(WITH_GMS),true)
 PRODUCT_PACKAGES += \
     ExactCalculator \
     Jelly
+endif
 endif
 
 ifeq ($(PRODUCT_IS_AUTOMOTIVE),)
@@ -296,7 +298,11 @@ PRODUCT_EXTRA_RECOVERY_KEYS += \
 
 include vendor/circle/config/version.mk
 
--include vendor/circle-priv/keys/keys.mk
+ifeq ($(filter OFFICIAL BETA ALPHA,$(CIRCLE_BUILDTYPE)),)
+    -include vendor/circle-priv/keys/keys.mk
+else
+    include vendor/circle-priv/keys/keys.mk
+endif
 
 -include $(WORKSPACE)/build_env/image-auto-bits.mk
 -include vendor/circle/config/partner_gms.mk

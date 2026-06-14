@@ -9,11 +9,15 @@ $(call inherit-product-if-exists, external/google-fonts/google-sans-flex/fonts.m
 # Apps
 PRODUCT_PACKAGES += \
     Camelot \
-    Etar \
     Profiles \
     Recorder \
-    Seedvault \
     Twelve
+
+ifneq ($(WITH_GMS), true)
+PRODUCT_PACKAGES += \
+    Etar \
+    Seedvault
+endif
 
 ifneq ($(PRODUCT_NO_CAMERA),true)
 PRODUCT_PACKAGES += \
