@@ -299,10 +299,10 @@ PRODUCT_EXTRA_RECOVERY_KEYS += \
 include vendor/circle/config/version.mk
 
 ifeq ($(filter OFFICIAL BETA ALPHA,$(CIRCLE_BUILDTYPE)),)
-    -include vendor/circle-priv/keys/keys.mk
+    $(call inherit-product-if-exists, vendor/circle-priv/keys/keys.mk)
 else
-    include vendor/circle-priv/keys/keys.mk
+    $(call inherit-product, vendor/circle-priv/keys/keys.mk)
 endif
 
 -include $(WORKSPACE)/build_env/image-auto-bits.mk
--include vendor/circle/config/partner_gms.mk
+include vendor/circle/config/partner_gms.mk
