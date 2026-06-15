@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Copyright (C) 2012-2013, The CyanogenMod Project
-#           (C) 2017-2018,2020-2021, The LineageOS Project
+# Copyright (C) 2012-2015, SlimRoms Project
+# Copyright (C) 2016-2017, AOSiP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,79 +17,78 @@
 
 from __future__ import print_function
 
-import glob
+import base64
 import json
+import netrc
 import os
-import re
-import subprocess
 import sys
-import urllib.error
-import urllib.parse
-import urllib.request
+
 from xml.etree import ElementTree
 
-dryrun = os.getenv('ROOMSERVICE_DRYRUN') == 'true'
-if dryrun:
-    print('Dry run roomservice, no change will be made.')
-
-product = sys.argv[1]
-
-if len(sys.argv) > 2:
-    depsonly = sys.argv[2]
-else:
-    depsonly = None
-
 try:
-    device = product[product.index('_') + 1 :]
-except IndexError:
-    device = product
+    # For python3
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+except ImportError:
+    # For python2
+    import imp
+    import urllib2
+    import urlparse
+    urllib = imp.new_module('urllib')
+    urllib.error = urllib2
+    urllib.parse = urlparse
+    urllib.request = urllib2
 
-if not depsonly:
-    print(
-        f'Device {device} not found. Attempting to retrieve device repository from LineageOS Github (http://github.com/LineageOS).'
-    )
+DEBUG = True
 
-repositories = []
+custom_local_manifest = ".repo/local_manifests/default.xml"
+custom_default_revision = "16.2"
+custom_github_revision = "lineage-23.2"
+custom_dependencies = "circle.dependencies"
+org_manifest = "circling-devices"  # leave empty if org is provided in manifest
+org_display = "CiRCLING-Devices"  # needed for displaying
 
-if not depsonly:
-    githubreq = urllib.request.Request(
-        'https://raw.githubusercontent.com/LineageOS/mirror/main/default.xml'
-    )
-    try:
-        result = ElementTree.fromstring(
-            urllib.request.urlopen(githubreq, timeout=10).read().decode()
-        )
-    except urllib.error.URLError:
-        print('Failed to fetch data from GitHub')
-        sys.exit(1)
-    except ValueError:
-        print('Failed to parse return data from GitHub')
-        sys.exit(1)
-    for res in result.findall('.//project'):
-        repositories.append(res.attrib['name'][10:])
+github_auth = None
 
-local_manifests = r'.repo/local_manifests'
+
+local_manifests = '.repo/local_manifests'
 if not os.path.exists(local_manifests):
     os.makedirs(local_manifests)
 
 
-def exists_in_tree(lm, path):
-    for child in lm.getchildren():
-        if child.attrib['path'] == path:
-            return True
-    return False
+def debug(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
 
 
-# in-place prettyprint formatter
+def add_auth(g_req):
+    global github_auth
+    if github_auth is None:
+        try:
+            auth = netrc.netrc().authenticators("api.github.com")
+        except (netrc.NetrcParseError, IOError):
+            auth = None
+        if auth:
+            github_auth = base64.b64encode(
+                ('%s:%s' % (auth[0], auth[2])).encode()
+            )
+        else:
+            github_auth = ""
+    if github_auth:
+        g_req.add_header("Authorization", "Basic %s" % github_auth)
+
+
 def indent(elem, level=0):
-    i = '\n' + level * '  '
+    # in-place prettyprint formatter
+    i = "\n" + "  " * level
     if len(elem):
         if not elem.text or not elem.text.strip():
-            elem.text = i + '  '
+            elem.text = i + "  "
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for elem in elem:
-            indent(elem, level + 1)
+            indent(elem, level+1)
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
     else:
@@ -97,307 +97,288 @@ def indent(elem, level=0):
 
 
 def get_manifest_path():
-    """Find the current manifest path
+    '''Find the current manifest path
     In old versions of repo this is at .repo/manifest.xml
     In new versions, .repo/manifest.xml includes an include
-    to some arbitrary file in .repo/manifests"""
+    to some arbitrary file in .repo/manifests'''
 
-    m = ElementTree.parse('.repo/manifest.xml')
+    m = ElementTree.parse(".repo/manifest.xml")
     try:
         m.findall('default')[0]
         return '.repo/manifest.xml'
     except IndexError:
-        return f'.repo/manifests/{m.find("include").get("name")}'
+        return ".repo/manifests/{}".format(m.find("include").get("name"))
+
+def load_manifest(manifest):
+    try:
+        man = ElementTree.parse(manifest).getroot()
+    except (IOError, ElementTree.ParseError):
+        man = ElementTree.Element("manifest")
+    return man
 
 
-def get_from_manifest_project_paths(manifest_path):
-    m = ElementTree.parse(manifest_path)
-    m = m.getroot()
-    return [x.get('path') for x in m.findall('project')]
-
-
-def get_default_revision():
-    m = ElementTree.parse(get_manifest_path())
+def get_default(manifest=None):
+    m = manifest or load_manifest(get_manifest_path())
     d = m.findall('default')[0]
-    r = d.get('revision')
-    return r.replace('refs/heads/', '').replace('refs/tags/', '')
+    return d
 
 
-def get_from_manifest(devicename):
-    for path in glob.glob('.repo/local_manifests/*.xml'):
-        try:
-            lm = ElementTree.parse(path)
-            lm = lm.getroot()
-        except Exception:
-            lm = ElementTree.Element('manifest')
+def get_remote(manifest=None, remote_name=None):
+    m = manifest or load_manifest(get_manifest_path())
+    if not remote_name:
+        remote_name = get_default(manifest=m).get('remote')
+    remotes = m.findall('remote')
+    for remote in remotes:
+        if remote_name == remote.get('name'):
+            return remote
 
-        for localpath in lm.findall('project'):
-            if re.search(f'android_device_.*_{device}$', localpath.get('name')):
-                return localpath.get('path')
 
+def get_revision(manifest=None, p="build"):
+    return custom_default_revision
+    m = manifest or load_manifest(get_manifest_path())
+    project = None
+    for proj in m.findall('project'):
+        if proj.get('path').strip('/') == p:
+            project = proj
+            break
+    revision = project.get('revision')
+    if revision:
+        return revision.replace('refs/heads/', '').replace('refs/tags/', '')
+    remote = get_remote(manifest=m, remote_name=project.get('remote'))
+    revision = remote.get('revision')
+    if not revision:
+        return custom_default_revision
+    return revision.replace('refs/heads/', '').replace('refs/tags/', '')
+
+
+def get_from_manifest(device_name):
+    if os.path.exists(custom_local_manifest):
+        man = load_manifest(custom_local_manifest)
+        for local_path in man.findall("project"):
+            lp = local_path.get("path").strip('/')
+            if lp.startswith("device/") and lp.endswith("/" + device_name):
+                return lp
     return None
 
 
-def is_in_manifest(tag, attr, attr_value):
-    for path in glob.glob('.repo/local_manifests/*.xml'):
-        try:
-            lm = ElementTree.parse(path)
-            lm = lm.getroot()
-        except Exception:
-            lm = ElementTree.Element('manifest')
-
-        for localpath in lm.findall(tag):
-            if localpath.get(attr) == attr_value:
+def is_in_manifest(project_path):
+    for man in (custom_local_manifest, get_manifest_path()):
+        man = load_manifest(man)
+        for local_path in man.findall("project"):
+            if local_path.get("path") == project_path:
                 return True
-
-    # Search in main manifest, too
-    try:
-        lm = ElementTree.parse(get_manifest_path())
-        lm = lm.getroot()
-    except Exception:
-        lm = ElementTree.Element('manifest')
-
-    for localpath in lm.findall(tag):
-        if localpath.get(attr) == attr_value:
-            return True
-
-    # ... and don't forget the lineage snippet
-    try:
-        lm = ElementTree.parse('.repo/manifests/snippets/lineage.xml')
-        lm = lm.getroot()
-    except Exception:
-        lm = ElementTree.Element('manifest')
-
-    for localpath in lm.findall(tag):
-        if localpath.get(attr) == attr_value:
-            return True
-
     return False
 
 
-def add_to_manifest(dependencies):
-    if dryrun:
-        return
+def add_to_manifest(repos, fallback_branch=None):
+    lm = load_manifest(custom_local_manifest)
 
-    try:
-        lm = ElementTree.parse('.repo/local_manifests/roomservice.xml')
-        lm = lm.getroot()
-    except Exception:
-        lm = ElementTree.Element('manifest')
+    for repo in repos:
+        repo_name = repo['repository']
+        repo_path = repo['target_path']
+        
+        if 'remote' in repo:
+            repo_remote=repo['remote']
+            repo_branch=custom_default_revision
+        elif "/" not in repo_name:
+            repo_remote=org_manifest
+            repo_branch=custom_default_revision
+        elif "/" in repo_name:
+            repo_remote="github"
+            repo_branch=custom_github_revision
+        if 'branch' in repo:
+            repo_branch=repo['branch']
 
-    for dependency in dependencies:
-        dependency_type = dependency.get('type', 'project')
+        if is_in_manifest(repo_path):
+            print('already exists: %s' % repo_path)
+            continue
 
-        if dependency_type == 'kernel':
-            include_name = (
-                f'manifests/snippets/kernel-{dependency["version"]}.xml'
-            )
-            print(f'Checking if {include_name} is included')
-            if is_in_manifest('include', 'name', include_name):
-                print(f'{include_name} already included')
-                continue
+        print('Adding dependency:\nRepository: %s\nBranch: %s\nRemote: %s\nPath: %s\n' % (repo_name, repo_branch, repo_remote, repo_path))
 
-            include = ElementTree.Element(
-                'include',
-                attrib={
-                    'name': include_name,
-                },
-            )
-            print(f'Adding dependency include: {include_name}')
-            lm.append(include)
-        elif dependency_type == 'project':
-            repo_name = dependency['repository']
-            repo_target = dependency['target_path']
-            repo_revision = dependency['branch']
-            print(f'Checking if {repo_target} is fetched from {repo_name}')
-            if is_in_manifest('project', 'path', repo_target):
-                print(f'LineageOS/{repo_name} already fetched to {repo_target}')
-                continue
+        project = ElementTree.Element(
+            "project",
+            attrib={"path": repo_path,
+                    "remote": repo_remote,
+                    "name": "%s" % repo_name}
+        )
 
-            project = ElementTree.Element(
-                'project',
-                attrib={
-                    'path': repo_target,
-                    'remote': 'github',
-                    'name': f'LineageOS/{repo_name}',
-                    'revision': repo_revision,
-                },
-            )
-            if repo_remote := dependency.get('remote', None):
-                # aosp- remotes are only used for kernel prebuilts, thus they
-                # don't let you customize clone-depth/revision.
-                if repo_remote.startswith('aosp-'):
-                    project.attrib['name'] = repo_name
-                    project.attrib['remote'] = repo_remote
-                    project.attrib['clone-depth'] = '1'
-                    del project.attrib['revision']
-            if project.attrib.get('revision', None) == get_default_revision():
-                del project.attrib['revision']
-            print(
-                f'Adding dependency: {project.attrib["name"]} -> {project.attrib["path"]}'
-            )
-            lm.append(project)
+        clone_depth = os.getenv('ROOMSERVICE_CLONE_DEPTH')
+        if clone_depth:
+            project.set('clone-depth', clone_depth)
+
+        if repo_branch is not None:
+            project.set('revision', repo_branch)
+        elif fallback_branch:
+            print("Using branch %s for %s" %
+                  (fallback_branch, repo_name))
+            project.set('revision', fallback_branch)
         else:
-            print(f'Unsupported dependency type: {dependency_type}')
-            sys.exit(1)
+            print("Using default branch for %s" % repo_name)
+        if 'clone-depth' in repo:
+            print("Setting clone-depth to %s for %s" % (repo['clone-depth'], repo_name))
+            project.set('clone-depth', repo['clone-depth'])
+        lm.append(project)
 
-    indent(lm, 0)
-    raw_xml = ElementTree.tostring(lm).decode()
-    raw_xml = '<?xml version="1.0" encoding="UTF-8"?>\n' + raw_xml
+    indent(lm)
+    raw_xml = "\n".join(('<?xml version="1.0" encoding="UTF-8"?>',
+                         ElementTree.tostring(lm).decode()))
 
-    f = open('.repo/local_manifests/roomservice.xml', 'w')
+    f = open(custom_local_manifest, 'w')
     f.write(raw_xml)
     f.close()
 
+_fetch_dep_cache = []
 
-def fetch_dependencies(repo_path):
-    print(f'Looking for dependencies in {repo_path}')
-    dependencies_path = repo_path + '/lineage.dependencies'
-    syncable_repos = []
-    verify_repos = []
 
-    if os.path.exists(dependencies_path):
-        with open(dependencies_path, 'r') as dependencies_file:
-            dependencies = json.load(dependencies_file)
-        fetch_list = []
+def fetch_dependencies(repo_path, fallback_branch=None):
+    global _fetch_dep_cache
+    if repo_path in _fetch_dep_cache:
+        return
+    _fetch_dep_cache.append(repo_path)
 
-        for dependency in dependencies:
-            dependency_type = dependency.get('type', 'project')
+    print('Looking for dependencies')
 
-            if dependency_type == 'kernel':
-                include_name = (
-                    f'manifests/snippets/kernel-{dependency["version"]}.xml'
-                )
-                if not is_in_manifest('include', 'name', include_name):
-                    fetch_list.append(dependency)
-                    syncable_repos += get_from_manifest_project_paths(
-                        f'.repo/{include_name}'
-                    )
-            elif dependency_type == 'project':
-                if not is_in_manifest(
-                    'project', 'path', dependency['target_path']
-                ):
-                    fetch_list.append(dependency)
-                    syncable_repos.append(dependency['target_path'])
-                    if 'branch' not in dependency:
-                        if dependency.get('remote', 'github') == 'github':
-                            dependency['branch'] = (
-                                get_default_or_fallback_revision(
-                                    dependency['repository']
-                                )
-                            )
-                            if not dependency['branch']:
-                                sys.exit(1)
-                        else:
-                            dependency['branch'] = None
-                verify_repos.append(dependency['target_path'])
-
-                if not os.path.isdir(dependency['target_path']):
-                    syncable_repos.append(dependency['target_path'])
-            else:
-                print(f'Unsupported dependency type: {dependency_type}')
-                sys.exit(1)
-
-        if len(fetch_list) > 0:
-            print('Adding dependencies to manifest')
-            add_to_manifest(fetch_list)
+    dep_p = '/'.join((repo_path, custom_dependencies))
+    if os.path.exists(dep_p):
+        with open(dep_p) as dep_f:
+            dependencies = json.load(dep_f)
     else:
-        print(f'{repo_path} has no additional dependencies.')
+        dependencies = {}
+        print('%s has no additional dependencies.' % repo_path)
 
-    if len(syncable_repos) > 0:
+    fetch_list = []
+    syncable_repos = []
+
+    for dependency in dependencies:
+        if not is_in_manifest(dependency['target_path']):
+            fetch_list.append(dependency)
+            syncable_repos.append(dependency['target_path'])
+        else:
+            print("Dependency already present in manifest: %s => %s" % (dependency['repository'], dependency['target_path']))
+
+    if fetch_list:
+        print('Adding dependencies to manifest\n')
+        add_to_manifest(fetch_list, fallback_branch)
+
+    if syncable_repos:
         print('Syncing dependencies')
-        if not dryrun:
-            subprocess.run(['repo', 'sync', '--force-sync'] + syncable_repos)
+        os.system('repo sync --force-sync --no-tags --current-branch --no-clone-bundle %s' % ' '.join(syncable_repos))
 
-    for deprepo in verify_repos:
+    for deprepo in syncable_repos:
         fetch_dependencies(deprepo)
 
 
-def get_default_or_fallback_revision(repo_name):
-    default_revision = get_default_revision()
-    print(f'Default revision: {default_revision}')
-    print('Checking branch info')
-
-    try:
-        stdout = subprocess.run(
-            [
-                'git',
-                'ls-remote',
-                '-h',
-                'https://:@github.com/LineageOS/' + repo_name,
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ).stdout.decode()
-        branches = [x.split('refs/heads/')[-1] for x in stdout.splitlines()]
-    except Exception:
-        return ''
-
-    if default_revision in branches:
-        return default_revision
-
-    if os.getenv('ROOMSERVICE_BRANCHES'):
-        fallbacks = list(
-            filter(bool, os.getenv('ROOMSERVICE_BRANCHES').split(' '))
-        )
-        for fallback in fallbacks:
-            if fallback in branches:
-                print(f'Using fallback branch: {fallback}')
-                return fallback
-
-    print(
-        f'Default revision {default_revision} not found in {repo_name}. Bailing.'
-    )
-    print('Branches found:')
-    for branch in branches:
-        print(branch)
-    print(
-        'Use the ROOMSERVICE_BRANCHES environment variable to specify a list of fallback branches.'
-    )
-    return ''
+def has_branch(branches, revision):
+    return revision in (branch['name'] for branch in branches)
 
 
-if depsonly:
-    repo_path = get_from_manifest(device)
-    if repo_path:
-        fetch_dependencies(repo_path)
-    else:
-        print('Trying dependencies-only mode on a non-existing device tree?')
+def detect_revision(repo):
+    """
+    returns None if using the default revision, else return
+    the branch name if using a different revision
+    """
+    print("Checking branch info")
+    githubreq = urllib.request.Request(
+        repo['branches_url'].replace('{/branch}', ''))
+    add_auth(githubreq)
+    result = json.loads(urllib.request.urlopen(githubreq).read().decode())
 
+    calc_revision = get_revision()
+    print("Calculated revision: %s" % calc_revision)
+
+    if has_branch(result, calc_revision):
+        return calc_revision
+
+    fallbacks = os.getenv('ROOMSERVICE_BRANCHES', '').split()
+    for fallback in fallbacks:
+        if has_branch(result, fallback):
+            print("Using fallback branch: %s" % fallback)
+            return fallback
+
+    if has_branch(result, custom_default_revision):
+        print("Falling back to custom revision: %s"
+              % custom_default_revision)
+        return custom_default_revision
+
+    print("Branches found:")
+    for branch in result:
+        print(branch['name'])
+    print("Use the ROOMSERVICE_BRANCHES environment variable to "
+          "specify a list of fallback branches.")
     sys.exit()
 
-else:
-    for repo_name in repositories:
-        if re.match(r'^android_device_[^_]*_' + device + '$', repo_name):
-            print(f'Found repository: {repo_name}')
 
-            manufacturer = repo_name.replace('android_device_', '').replace(
-                '_' + device, ''
-            )
-            repo_path = f'device/{manufacturer}/{device}'
-            revision = get_default_or_fallback_revision(repo_name)
-            if revision == '':
-                # Some devices have the same codename but shipped a long time ago and may not have
-                # a current branch set up.
-                # Continue looking up all repositories until a match is found or no repos are left
-                # to check.
-                continue
+def main():
+    global DEBUG
+    try:
+        depsonly = bool(sys.argv[2] in ['true', 1])
+    except IndexError:
+        depsonly = False
 
-            device_repository = {
-                'repository': repo_name,
-                'target_path': repo_path,
-                'branch': revision,
-            }
-            add_to_manifest([device_repository])
+    if os.getenv('ROOMSERVICE_DEBUG'):
+        DEBUG = True
 
-            print('Syncing repository to retrieve project.')
-            subprocess.run(['repo', 'sync', '--force-sync', repo_path])
-            print('Repository synced!')
+    product = sys.argv[1]
+    device = product[product.find("_") + 1:] or product
 
+    if depsonly:
+        repo_path = get_from_manifest(device)
+        if repo_path:
             fetch_dependencies(repo_path)
-            print('Done')
-            sys.exit()
+        else:
+            print("Trying dependencies-only mode on a "
+                  "non-existing device tree?")
+        sys.exit()
 
-print(
-    f'Repository for {device} not found in the LineageOS Github repository list. If this is in error, you may need to manually add it to your local_manifests/roomservice.xml.'
-)
+    print("Device {0} not found. Attempting to retrieve device repository from "
+          "{1} Github (http://github.com/{1}).".format(device, org_display))
+
+    githubreq = urllib.request.Request(
+        "https://api.github.com/search/repositories?"
+        "q={0}+user:{1}+in:name+fork:true".format(device, org_display))
+    add_auth(githubreq)
+
+    repositories = []
+
+    try:
+        result = json.loads(urllib.request.urlopen(githubreq).read().decode())
+    except urllib.error.URLError:
+        print("Failed to search GitHub")
+        sys.exit()
+    except ValueError:
+        print("Failed to parse return data from GitHub")
+        sys.exit()
+    for res in result.get('items', []):
+        repositories.append(res)
+
+    for repository in repositories:
+        repo_name = repository['name']
+        print (repository['name'])
+
+        if not ((repo_name.startswith("device_") or repo_name.startswith("android_device_")) and
+                repo_name.endswith("_" + device)):
+            continue
+        print("Found repository: %s" % repository['name'])
+
+        fallback_branch = detect_revision(repository)
+        manufacturer = repo_name[(15 if repo_name.startswith("android_device_") else 7):-(len(device)+1)]
+        repo_path = "device/%s/%s" % (manufacturer, device)
+        adding = [{'repository': repo_name, 'target_path': repo_path}]
+
+        add_to_manifest(adding, fallback_branch)
+
+        print("Syncing repository to retrieve project.")
+        os.system('repo sync --force-sync --no-tags --current-branch --no-clone-bundle %s' % repo_path)
+        print("Repository synced!")
+
+        fetch_dependencies(repo_path, fallback_branch)
+        print("Done")
+        sys.exit()
+
+    print("Repository for %s not found in the %s Github repository list."
+          % (device, org_display))
+    print("If this is in error, you may need to manually add it to your "
+          "%s" % custom_local_manifest)
+
+if __name__ == "__main__":
+    main()
