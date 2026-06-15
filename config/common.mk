@@ -295,6 +295,10 @@ CUSTOM_LOCALES += \
 PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS += vendor/crowdin/overlay
 PRODUCT_PACKAGE_OVERLAYS += vendor/crowdin/overlay
 
+# Maintainer prop
+PRODUCT_PRODUCT_PROPERTIES += \
+    ro.circle.maintainer="$(CIRCLE_MAINTAINER)"
+
 PRODUCT_EXTRA_RECOVERY_KEYS += \
     vendor/circle/build/target/product/security/lineage
 
