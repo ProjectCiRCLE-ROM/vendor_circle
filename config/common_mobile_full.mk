@@ -13,11 +13,9 @@ PRODUCT_PACKAGES += \
     Recorder \
     Twelve
 
-ifneq ($(WITH_GMS), true)
 PRODUCT_PACKAGES += \
     Etar \
     Seedvault
-endif
 
 ifneq ($(PRODUCT_NO_CAMERA),true)
 PRODUCT_PACKAGES += \

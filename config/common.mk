@@ -145,9 +145,11 @@ PRODUCT_PACKAGES += \
 
 # Lineage packages
 ifeq ($(PRODUCT_IS_ATV),)
+PRODUCT_PACKAGES += \
+    ExactCalculator
+
 ifneq ($(WITH_GMS),true)
 PRODUCT_PACKAGES += \
-    ExactCalculator \
     Jelly
 endif
 endif
