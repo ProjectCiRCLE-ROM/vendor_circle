@@ -28,7 +28,7 @@ endif
 
 # LineageOS version properties
 PRODUCT_PRODUCT_PROPERTIES += \
-    ro.circle.version=$(LINEAGE_VERSION) \
-    ro.circle.display.version=$(LINEAGE_DISPLAY_VERSION) \
+    ro.circle.version=$(CIRCLE_VERSION) \
+    ro.circle.display.version=$(CIRCLE_DISPLAY_VERSION) \
     ro.circle.build.version=$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR).$(PRODUCT_VERSION_PATCH) \
-    ro.circle.releasetype=$(LINEAGE_BUILDTYPE)
+    ro.circle.releasetype=$(CIRCLE_BUILDTYPE)
