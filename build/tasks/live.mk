@@ -23,7 +23,7 @@ SHA256 := prebuilts/build-tools/path/$(HOST_PREBUILT_TAG)/sha256sum
 $(CIRCLE_TARGET_PACKAGE): $(INTERNAL_OTA_PACKAGE_TARGET)
 	@echo "Thanks for tuning in!" >&2
 	@echo "" >&2
-	$(hide) ln -f $(INTERNAL_OTA_PACKAGE_TARGET) $(CIRCLE_TARGET_PACKAGE)
+	$(hide) cp -f $(INTERNAL_OTA_PACKAGE_TARGET) $(CIRCLE_TARGET_PACKAGE)
 	$(hide) $(SHA256) $(CIRCLE_TARGET_PACKAGE) | sed "s|$(PRODUCT_OUT)/||" > $(CIRCLE_TARGET_PACKAGE).sha256sum
 	@echo "Good work! You can find your recording here:" >&2
 	@echo "$(CIRCLE_TARGET_PACKAGE)" >&2
