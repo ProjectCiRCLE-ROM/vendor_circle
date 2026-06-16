@@ -95,7 +95,7 @@ function eat()
 
 function omnom()
 {
-    brunch $*
+    brunch $* && \
     eat
 }
 
