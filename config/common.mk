@@ -215,6 +215,9 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system/%/libfuse-lite.so \
     system/%/libntfs-3g.so
 
+# Fonts
+include vendor/circle/config/fonts.mk
+
 # FRP
 PRODUCT_COPY_FILES += \
     vendor/circle/prebuilt/common/bin/wipe-frp.sh:$(TARGET_COPY_OUT_RECOVERY)/root/system/bin/wipe-frp
