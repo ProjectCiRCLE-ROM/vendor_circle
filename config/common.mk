@@ -254,6 +254,16 @@ PRODUCT_PRODUCT_PROPERTIES += \
     debug.sf.enable_transaction_tracing=false
 endif
 
+# Lockscreen Clocks
+PRODUCT_PACKAGES += \
+    SystemUIClocks-BigNum \
+    SystemUIClocks-Calligraphy \
+    SystemUIClocks-Growth \
+    SystemUIClocks-Inflate \
+    SystemUIClocks-Metro \
+    SystemUIClocks-NumOverlap \
+    SystemUIClocks-Weather
+
 # Audio files
 $(call inherit-product, vendor/circle/audio/audio.mk)
 
