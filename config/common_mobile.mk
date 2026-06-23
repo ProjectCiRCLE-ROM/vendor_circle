@@ -18,11 +18,9 @@ PRODUCT_PACKAGES += \
     AvatarPicker \
     Backgrounds
 
-ifneq ($(WITH_GMS), true)
 PRODUCT_PACKAGES += \
     Glimpse \
     LatinIME
-endif
 
 ifeq ($(PRODUCT_TYPE), go)
 PRODUCT_PACKAGES += \
