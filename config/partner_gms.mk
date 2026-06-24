@@ -9,8 +9,9 @@ $(call inherit-product, vendor/gapps/permissions/permissions.mk)
 PRODUCT_COPY_FILES += \
     vendor/circle/prebuilt/google/etc/sysconfig/pixel_2016_exclusive.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/sysconfig/pixel_2016_exclusive.xml
 
-# Updater overlay
+# Misc overlays
 PRODUCT_PACKAGES += \
+    TrebuchetOverlayGMS \
     UpdaterOverlayGMS
 
 endif

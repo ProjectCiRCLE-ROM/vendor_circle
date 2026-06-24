@@ -1,0 +1,11 @@
+//
+// Copyright (C) 2022 The LineageOS Project
+// Copyright (C) 2026 Project CiRCLE
+// SPDX-License-Identifier: Apache-2.0
+//
+
+runtime_resource_overlay {
+    name: "TrebuchetOverlayGMS",
+    overrides: ["Launcher3Overlay"],
+    product_specific: true,
+}
