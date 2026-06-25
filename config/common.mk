@@ -131,10 +131,8 @@ ifeq ($(PRODUCT_IS_ATV),)
 PRODUCT_PACKAGES += \
     ExactCalculator
 
-ifneq ($(WITH_GMS),true)
 PRODUCT_PACKAGES += \
     Jelly
-endif
 endif
 
 ifeq ($(PRODUCT_IS_AUTOMOTIVE),)
