@@ -1,6 +1,9 @@
 ifeq ($(WITH_GMS),true)
 # Inherit GMS repo
-$(call inherit-product, vendor/google/gms/config.mk)
+$(call inherit-product, vendor/gapps/arm64/arm64-vendor.mk)
+
+# Permission definitions
+$(call inherit-product, vendor/gapps/permissions/permissions.mk)
 
 # Unlimited google photos backup
 PRODUCT_COPY_FILES += \
