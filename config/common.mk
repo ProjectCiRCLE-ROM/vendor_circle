@@ -222,6 +222,10 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     rsync
 
+# SoundPicker
+ PRODUCT_PACKAGES += \
+    SoundPicker
+
 # Storage manager
 PRODUCT_PRODUCT_PROPERTIES += \
     ro.storage_manager.enabled=true
