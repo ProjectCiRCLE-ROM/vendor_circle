@@ -276,7 +276,8 @@ $(call inherit-product, vendor/circle/audio/audio.mk)
 # SetupWizard
 PRODUCT_PRODUCT_PROPERTIES += \
     setupwizard.theme=glif_expressive \
-    setupwizard.feature.day_night_mode_enabled=true
+    setupwizard.feature.day_night_mode_enabled=true \
+    is_expressive_design_enabled=true
 
 PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS += vendor/circle/overlay/no-rro
 PRODUCT_PACKAGE_OVERLAYS += \
