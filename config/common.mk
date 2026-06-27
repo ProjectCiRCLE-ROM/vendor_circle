@@ -276,6 +276,7 @@ PRODUCT_PACKAGES += \
 
 # Audio files
 $(call inherit-product, vendor/circle/audio/audio.mk)
+$(call inherit-product, vendor/circle/bandori_audio/bandori_audio.mk)
 
 # SetupWizard
 PRODUCT_PRODUCT_PROPERTIES += \

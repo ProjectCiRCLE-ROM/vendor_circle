@@ -10,8 +10,8 @@ include vendor/circle/config/lineage_audio.mk
 
 # Default notification/alarm sounds
 PRODUCT_PRODUCT_PROPERTIES += \
-    ro.config.notification_sound=Bushido.ogg \
-    ro.config.alarm_alert=Krypton.ogg
+    ro.config.notification_sound=Your_Gift_To_Me.ogg \
+    ro.config.alarm_alert=Your_Gift_To_Me.ogg
 
 # Apps
 PRODUCT_PACKAGES += \

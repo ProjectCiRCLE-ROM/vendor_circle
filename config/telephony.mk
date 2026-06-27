@@ -18,7 +18,7 @@ PRODUCT_PACKAGES += \
 
 # Default ringtone
 PRODUCT_PRODUCT_PROPERTIES += \
-    ro.config.ringtone=Ganymede.ogg
+    ro.config.ringtone=Sasanqua.ogg
 
 # Tethering - allow without requiring a provisioning app
 # (for devices that check this)
