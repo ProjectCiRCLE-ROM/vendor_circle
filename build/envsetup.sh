@@ -32,7 +32,7 @@ function brunch()
 {
     breakfast $*
     if [ $? -eq 0 ]; then
-        mka live
+        mka live -j$(($(nproc)/2))
     else
         echo "No such item in brunch menu. Try 'breakfast'"
         return 1
