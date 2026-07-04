@@ -197,6 +197,11 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/ringtones/Vespa.ogg:$(TARGET_COPY_OUT_PRODUCT)/media/audio/ringtones/Vespa.ogg
 
 PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/effects/charging_started_low.flac:$(TARGET_COPY_OUT_PRODUCT)/media/audio/ui/charging_started_low.flac \
+    $(LOCAL_PATH)/effects/charging_started_medium.flac:$(TARGET_COPY_OUT_PRODUCT)/media/audio/ui/charging_started_medium.flac \
+    $(LOCAL_PATH)/effects/charging_started_high.flac:$(TARGET_COPY_OUT_PRODUCT)/media/audio/ui/charging_started_high.flac
+
+PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/effects/ogg/ChargingStarted.ogg:$(TARGET_COPY_OUT_PRODUCT)/media/audio/notifications/ChargingStarted.ogg \
     $(LOCAL_PATH)/effects/ogg/Effect_Tick_48k.ogg:$(TARGET_COPY_OUT_PRODUCT)/media/audio/ui/Effect_Tick.ogg \
     $(LOCAL_PATH)/effects/material/ogg/WirelessChargingStarted.ogg:$(TARGET_COPY_OUT_PRODUCT)/media/audio/notifications/WirelessChargingStarted.ogg
