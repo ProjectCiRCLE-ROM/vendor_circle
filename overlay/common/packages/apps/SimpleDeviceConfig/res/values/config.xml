@@ -60,5 +60,11 @@
         <!-- For SeedVault Backup -->
         <item>backup_and_restore/backup_transport_future_timeout_millis=900000</item>
         <item>backup_and_restore/backup_transport_callback_timeout_millis=900000</item>
+
+        <!--
+            Don't close QUIC connections (Mostly VPNs)
+            Further read: https://lowlevel.fun/posts/tiny-udp-cannon-android-vpn-bypass/
+        -->
+        <item>tethering/close_quic_connection=-1</item>
     </string-array>
 </resources>
