@@ -30,5 +30,8 @@ $(CIRCLE_TARGET_PACKAGE): $(INTERNAL_OTA_PACKAGE_TARGET)
 	@echo "" >&2
 	@echo "If there are any problems, don't hesitate to reach out! Enjoy!" >&2
 
-.PHONY: live
+.PHONY: live bacon
 live: $(CIRCLE_TARGET_PACKAGE) $(DEFAULT_GOAL)
+
+bacon:
+	@vendor/circle/build/tools/lineage_build_compat.sh
