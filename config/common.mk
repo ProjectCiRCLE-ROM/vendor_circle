@@ -174,6 +174,10 @@ PRODUCT_ARTIFACT_PATH_REQUIREMENT_ALLOWED_LIST += \
     system/bin/getcap \
     system/bin/setcap \
     system/%/libzstd.so
+
+# F-Droid Privileged Extension
+PRODUCT_PACKAGES += \
+    F-DroidPrivilegedExtension
     
 # Face Unlock
 TARGET_FACE_UNLOCK_SUPPORTED ?= $(TARGET_SUPPORTS_64_BIT_APPS)
